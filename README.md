@@ -1,36 +1,32 @@
-This is a [Next.js](https://nextjs.org) project bootstrapped with [`create-next-app`](https://nextjs.org/docs/app/api-reference/cli/create-next-app).
+# SSR Form Hydration Demo
+
+This repository is a demo project showcasing pitfalls when doing SSR for forms. In particular, it reproduces an issue in environments where JS loading/hydration is slow: JS-dependent validation state (e.g., `isValid`) from react-hook-form may fail to capture initial user input, leaving the submit button disabled.
+
+## Tech Stack
+- Next.js App Router (TypeScript), Tailwind v4
+- react-hook-form + zod (schema validation)
 
 ## Getting Started
-
-First, run the development server:
-
 ```bash
-npm run dev
-# or
-yarn dev
-# or
+pnpm install
 pnpm dev
-# or
-bun dev
 ```
+Open `http://localhost:3000/login` in your browser (Node 18+ recommended).
 
-Open [http://localhost:3000](http://localhost:3000) with your browser to see the result.
+## Reproduction Steps (using Chrome DevTools)
+1) Set Network to "Slow 3G" and Performance/CPU throttling to "4×–6×"
+2) Open `http://localhost:3000/login` and hard-reload (Cmd/Ctrl+Shift+R)
+3) Before JS finishes loading, enter email and password
+4) Even after hydration, `isValid` doesn’t catch up and the "Login" button stays disabled (typing one more character enables it)
 
-You can start editing the page by modifying `app/page.tsx`. The page auto-updates as you edit the file.
+## Why This Happens
+Immediately after SSR, only HTML is present. Because client JS is not yet initialized, the form library cannot receive input events. After hydration, the state cannot be reconstructed properly, causing inconsistencies in values like `isValid`.
 
-This project uses [`next/font`](https://nextjs.org/docs/app/building-your-application/optimizing/fonts) to automatically optimize and load [Geist](https://vercel.com/font), a new font family for Vercel.
+## Mitigation Examples
 
-## Learn More
 
-To learn more about Next.js, take a look at the following resources:
+## Main Files
+- `src/app/login/page.tsx`: Form page (adds an initial client-side delay to slow down hydration)
+- `src/components/login-form.tsx`: Login form using react-hook-form + zod (demo only; auth not implemented)
 
-- [Next.js Documentation](https://nextjs.org/docs) - learn about Next.js features and API.
-- [Learn Next.js](https://nextjs.org/learn) - an interactive Next.js tutorial.
-
-You can check out [the Next.js GitHub repository](https://github.com/vercel/next.js) - your feedback and contributions are welcome!
-
-## Deploy on Vercel
-
-The easiest way to deploy your Next.js app is to use the [Vercel Platform](https://vercel.com/new?utm_medium=default-template&filter=next.js&utm_source=create-next-app&utm_campaign=create-next-app-readme) from the creators of Next.js.
-
-Check out our [Next.js deployment documentation](https://nextjs.org/docs/app/building-your-application/deploying) for more details.
+This project is for demonstration purposes. It does not perform authentication or submit data.
