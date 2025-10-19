@@ -39,16 +39,27 @@ export function LoginForm({ action }: LoginFormProps) {
 
   const {
     register,
-    formState: { errors, isValid, isDirty },
+    formState: { errors },
+    trigger,
   } = useForm<LoginValues>({
     resolver: zodResolver(LoginSchema),
     mode: "onChange",
     reValidateMode: "onChange",
   });
 
-  function SubmitButton({ disabledBase }: { disabledBase: boolean }) {
+  async function onSubmit(e: React.FormEvent<HTMLFormElement>) {
+    if (!mounted) return; // SSR/no-JS: allow native/server handling
+    // When JS is ready, run RHF validation and block submit if invalid
+    const valid = await trigger();
+    if (!valid) {
+      e.preventDefault();
+      e.stopPropagation();
+    }
+  }
+
+  function SubmitButton() {
     const { pending } = useFormStatus();
-    const disabled = mounted ? disabledBase || pending : false;
+    const disabled = pending; // Always active unless submitting
     return (
       <Button type="submit" disabled={disabled} aria-busy={pending} className="w-full">
         {pending ? "送信中..." : "ログイン"}
@@ -66,7 +77,14 @@ export function LoginForm({ action }: LoginFormProps) {
           Server Action による送信（JS なしでも動作）。
           JS ありの場合は react-hook-form によるクライアント検証で UX を補助。
         */}
-        <form action={action} method="post" className="grid gap-4">
+        <form
+          action={action}
+          method="post"
+          // Disable native H5 validation after hydration; rely on RHF instead
+          noValidate={mounted}
+          onSubmit={onSubmit}
+          className="grid gap-4"
+        >
           <div className="grid gap-2">
             <Label htmlFor="email">メールアドレス</Label>
             <Input
@@ -111,7 +129,7 @@ export function LoginForm({ action }: LoginFormProps) {
               )}
             </div>
           </div>
-          <SubmitButton disabledBase={!isDirty || !isValid} />
+          <SubmitButton />
         </form>
       </CardContent>
     </Card>
