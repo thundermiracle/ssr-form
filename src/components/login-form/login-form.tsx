@@ -91,9 +91,10 @@ export function LoginForm({ action }: LoginFormProps) {
               id="email"
               type="email"
               inputMode="email"
-              autoComplete="email"
+              autoComplete="username"
               placeholder="you@example.com"
               required
+              suppressHydrationWarning
               aria-invalid={errors.email ? "true" : undefined}
               aria-describedby={errors.email ? "email-error" : undefined}
               className={errors.email ? "border-red-500 focus-visible:ring-red-500/30" : undefined}
@@ -114,6 +115,7 @@ export function LoginForm({ action }: LoginFormProps) {
               required
               minLength={8}
               maxLength={128}
+              suppressHydrationWarning
               aria-invalid={errors.password ? "true" : undefined}
               aria-describedby={errors.password ? "password-error" : undefined}
               className={errors.password ? "border-red-500 focus-visible:ring-red-500/30" : undefined}
