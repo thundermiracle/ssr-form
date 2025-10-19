@@ -4,6 +4,8 @@ import { cn } from "@/lib/utils";
 export type ButtonProps = React.ButtonHTMLAttributes<HTMLButtonElement> & {
   variant?: "default" | "outline" | "ghost";
   size?: "sm" | "md" | "lg";
+  // Allow Next.js Server Action function on buttons
+  formAction?: any;
 };
 
 export const Button = React.forwardRef<HTMLButtonElement, ButtonProps>(
@@ -37,4 +39,3 @@ export const Button = React.forwardRef<HTMLButtonElement, ButtonProps>(
 );
 
 Button.displayName = "Button";
-
