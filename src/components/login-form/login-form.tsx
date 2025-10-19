@@ -4,6 +4,7 @@ import * as React from "react";
 import { useForm } from "react-hook-form";
 import { z } from "zod";
 import { zodResolver } from "@hookform/resolvers/zod";
+import { useFormStatus } from "react-dom";
 import {
   Card,
   CardContent,
@@ -27,24 +28,43 @@ const LoginSchema = z.object({
 
 type LoginValues = z.infer<typeof LoginSchema>;
 
-export function LoginForm() {
+type LoginFormProps = {
+  action: (formData: FormData) => void | Promise<void>;
+};
+
+export function LoginForm({ action }: LoginFormProps) {
+  // Mounted flag to avoid SSR disabling the button (no-JS should allow submit)
+  const [mounted, setMounted] = React.useState(false);
+  React.useEffect(() => setMounted(true), []);
+
   const {
     register,
-    handleSubmit,
-    formState: { errors, isSubmitting, isValid, isDirty },
-    reset,
+    formState: { errors },
+    trigger,
   } = useForm<LoginValues>({
     resolver: zodResolver(LoginSchema),
     mode: "onChange",
     reValidateMode: "onChange",
   });
 
-  async function onSubmit(values: LoginValues) {
-    // Simulate async login; replace with real handling as needed.
-    await new Promise((r) => setTimeout(r, 600));
-    console.log("login", { email: values.email, password: values.password ? "***" : "" });
-    alert("ログイン（デモ）: コンソールを確認してください。");
-    reset();
+  async function onSubmit(e: React.FormEvent<HTMLFormElement>) {
+    if (!mounted) return; // SSR/no-JS: allow native/server handling
+    // When JS is ready, run RHF validation and block submit if invalid
+    const valid = await trigger();
+    if (!valid) {
+      e.preventDefault();
+      e.stopPropagation();
+    }
+  }
+
+  function SubmitButton() {
+    const { pending } = useFormStatus();
+    const disabled = pending; // Always active unless submitting
+    return (
+      <Button type="submit" disabled={disabled} aria-busy={pending} className="w-full">
+        {pending ? "送信中..." : "ログイン"}
+      </Button>
+    );
   }
 
   return (
@@ -53,15 +73,28 @@ export function LoginForm() {
         <CardTitle>ログイン</CardTitle>
       </CardHeader>
       <CardContent>
-        <form onSubmit={handleSubmit(onSubmit)} className="grid gap-4" noValidate>
+        {/*
+          Server Action による送信（JS なしでも動作）。
+          JS ありの場合は react-hook-form によるクライアント検証で UX を補助。
+        */}
+        <form
+          action={action}
+          method="post"
+          // Disable native H5 validation after hydration; rely on RHF instead
+          noValidate={mounted}
+          onSubmit={onSubmit}
+          className="grid gap-4"
+        >
           <div className="grid gap-2">
             <Label htmlFor="email">メールアドレス</Label>
             <Input
               id="email"
               type="email"
               inputMode="email"
-              autoComplete="email"
+              autoComplete="username"
               placeholder="you@example.com"
+              required
+              suppressHydrationWarning
               aria-invalid={errors.email ? "true" : undefined}
               aria-describedby={errors.email ? "email-error" : undefined}
               className={errors.email ? "border-red-500 focus-visible:ring-red-500/30" : undefined}
@@ -79,6 +112,10 @@ export function LoginForm() {
               id="password"
               type="password"
               autoComplete="current-password"
+              required
+              minLength={8}
+              maxLength={128}
+              suppressHydrationWarning
               aria-invalid={errors.password ? "true" : undefined}
               aria-describedby={errors.password ? "password-error" : undefined}
               className={errors.password ? "border-red-500 focus-visible:ring-red-500/30" : undefined}
@@ -94,14 +131,7 @@ export function LoginForm() {
               )}
             </div>
           </div>
-          <Button
-            type="submit"
-            disabled={isSubmitting || !isDirty || !isValid}
-            aria-busy={isSubmitting}
-            className="w-full"
-          >
-            {isSubmitting ? "送信中..." : "ログイン"}
-          </Button>
+          <SubmitButton />
         </form>
       </CardContent>
     </Card>
