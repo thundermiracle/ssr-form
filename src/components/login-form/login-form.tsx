@@ -54,7 +54,7 @@ export function LoginForm({ action }: { action: (prev: LoginState, formData: For
         <CardTitle>ログイン</CardTitle>
       </CardHeader>
       <CardContent>
-        <form action="/login/submit" method="POST" onSubmit={handleSubmit} className="grid gap-4" noValidate>
+        <form action={formAction} method="POST" onSubmit={handleSubmit} className="grid gap-4" noValidate>
           <div className="grid gap-2">
             <Label htmlFor="email">メールアドレス</Label>
             <Input
@@ -98,7 +98,7 @@ export function LoginForm({ action }: { action: (prev: LoginState, formData: For
               <p className="text-xs text-foreground/70">8文字以上で入力してください</p>
             )}
           </div>
-          <Button type="submit" formAction={formAction as any} disabled={isPending} aria-busy={isPending} className="w-full">
+          <Button type="submit" disabled={isPending} aria-busy={isPending} className="w-full">
             {isPending ? "送信中..." : "ログイン"}
           </Button>
         </form>
